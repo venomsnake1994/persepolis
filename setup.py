@@ -15,92 +15,75 @@
 #
 
 
-
-
-
 import os
 import warnings
 import sys
-import platform
 import shutil
+import platform
 
-# finding os platform
+
+# lists of the os platforms    the program supporting 
+os_lists = ['Linux', 'FreeBSD', 'OpenBSD']
+
+py_dependencies = ['PyQt5', 'requests ', 'setproctitle',
+               'psutil', 'youtube_dl', 'sys']
+
+dependencies = ['aria2c', 'paplay', 'notify-send']
+
+
+not_installed = []
+
+setuptools_available = False
+
 os_type = platform.system()
 
-if os_type == 'Linux' or os_type == 'FreeBSD' or os_type == 'OpenBSD':
-    from setuptools import setup, Command, find_packages
-    setuptools_available = True
-    print(os_type + " detected!")
-else:
-    print('This script is only work for GNU/Linux or BSD!')
-    sys.exit(1)
 
-# Checking dependencies!
-not_installed = ''
+def os_checker(os_type):
+    if os_type in os_lists:
+        from setuptools import setup, Command, find_packages
+        setuptools_available = True
+    else:
+        print('<!> Incompatible os Platform for running "setup.py"  script')
+        sys.exit()
 
-# PyQt5
-try:
-    import PyQt5
-    print('python3-pyqt5 is found')
-except:
-    print('Error : python3-pyqt5 is not installed!')
-    not_installed = not_installed + 'PyQt5, '
+def seperator(sep='-'):
+    """simple function for make output nicer """
+    print(sep * 60)
 
-# python3-requests
-try:
-    import requests 
-    print('python3-requests is found!')
-except:
-    print('Error : requests is not installed!')
-    not_installed = not_installed + 'python3-requests, '
+#function for  preventing the code  repetion
+def py_dependencie_checker(dependencies):
+    """ check requirement modules for import """
+    for index, module in enumerate(dependencies):
+        try:
+            exec('import {}'.format(module))
+            seperator()
+            print("Requirement already satisfied  {}".format(module))
+        except:
+            not_installed.append(module)
+            seperator()
+            print('Error : {} is not installed!'.format(module))
+        
+    
+def dependencie_checker(dependencies):
+    
+    for index, name in enumerate(dependencies):
+        answer = os.system('{} --version 1>/dev/null'.format(dependencies))
+        if answer != 0:
+            #print('Error: {} is Not installed!'.format(dependencies))
+            seperator()
+            not_installed.append(dependencies)
+        else:
+            print('{} is found!'.format(dependencies))         
+            seperator()
 
-# python3-setproctitle
-try:
-    import setproctitle
-    print('python3-setproctitle is found!')
-except:
-    print("Warning: setproctitle is not installed!")
-    not_installed = not_installed + 'python3-setproctitle, '
 
-# psutil
-try:
-    import psutil
-    print('python3-psutil is found!')
-except:
-    print("Warning: python3-psutil is not installed!")
-    not_installed = not_installed + 'psutil, '
+os_checker(os_type)
 
-# youtube_dl
-try:
-    import youtube_dl
-    print('youtube-dl is found')
-except:
-    print('Warning: youtube-dl is not installed!')
-    not_installed = not_installed + 'youtube-dl, '
+py_dependencies(py_dependencies)
 
-# aria2
-answer = os.system('aria2c --version 1>/dev/null')
-if answer != 0:
-    print("Error aria2 not installed!")
-    not_installed = not_installed + 'aria2c, '
-else:
-    print('aria2 is found!')
+dependencie_checker(dependencies)
 
-# libnotify-bin
-answer = os.system('notify-send --version 1>/dev/null')
-if answer != 0:
-    print("Error libnotify-bin is not installed!")
-    not_installed = not_installed + 'libnotify-bin, '
-else:
-    print('libnotify-bin is found!')
 
-# paplay
-answer = os.system('paplay --version 1>/dev/null')
-if answer != 0:
-    print("Warning: paplay not installed!You need pulseaudio for sound notifications!")
-    not_installed = not_installed + 'paplay, '
-else:
-    print('paplay is found!')
 
 # sound-theme-freedesktop
 if os_type == 'Linux':
@@ -120,16 +103,16 @@ if not_installed != '':
     print('####### WARNING ########')
     print('########################')
     print('Some dependencies are not installed .It causes some problems for persepolis! : \n')
-    print(not_installed + '\n\n')
+    print(not_installed )
     print('Read this link for more information: \n')
     print('https://github.com/persepolisdm/persepolis/wiki/git-installation-instruction\n\n')
     answer = input('Do you want to continue?(y/n)')
-    if answer not in ['y', 'Y', 'yes']:
+    if answer.upper().startswith('N'):
         sys.exit(1)
 
-if sys.argv[1] == "test":
-   print('We have not unit test :)')
-   sys.exit('0')
+#if sys.argv[1] == "test":
+ #   print('Unittest is not avaiable')  
+  #  sys.exit()
 
 DESCRIPTION = 'Persepolis Download Manager'
 
@@ -168,12 +151,14 @@ for folder in [src_pycache, gui_pycache, scripts_pycache]:
             + ' is removed!')
 
 
+
 # Creating man page file
 persepolis_man_page = os.path.join(setup_dir, 'man', 'persepolis.1')
 os.system('gzip -f -k -9 "'
         + persepolis_man_page
         + '"')
 print('man page file is generated!')
+
 
 setup(
     name = 'persepolis',
